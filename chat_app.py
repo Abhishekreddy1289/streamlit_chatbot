@@ -143,7 +143,7 @@ selected_file = None
 
 # Handle file uploads only when user interacts with the sidebar
 with st.sidebar:
-    uploaded_files = st.file_uploader('Upload files', type=['pdf', 'xlsx'], accept_multiple_files=True, label_visibility="hidden")
+    uploaded_files = st.file_uploader('Upload files', type=['pdf'], accept_multiple_files=True, label_visibility="hidden")
 
     if uploaded_files is not None:
         for uploaded_file in uploaded_files:
