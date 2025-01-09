@@ -52,6 +52,7 @@ def play_bot_audio(answer):
     #     st.audio(audio_file)  # Play the audio
     #     time.sleep(1)  # Small delay between chunks to ensure smooth transition
      # Generate and save audio for each chunk
+    audio_files=[]
     for i, chunk in enumerate(chunks):
         audio_file = f"response_{i}.wav"
         tts.text_to_speech(text=chunk, file_path=audio_file)  # Generate audio from text for the chunk
