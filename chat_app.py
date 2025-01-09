@@ -7,6 +7,14 @@ from rephrase import Rephrase
 from rag_pipeline import RAG, TextProcessor
 from audio_tts import TextToSpeech  # Importing the TextToSpeech class
 
+import sys
+from io import StringIO
+
+# Simulate the user entering "y"
+sys.stdin = StringIO('y\n')
+
+os.environ['COQUI_LICENSE_ACCEPTED'] = 'y'
+
 tts = TextToSpeech() 
 #Initialize TextProcessor class
 textprocessor=TextProcessor(chunk_size=1000, chunk_overlap=20)
