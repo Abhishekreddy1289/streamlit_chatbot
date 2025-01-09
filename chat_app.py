@@ -6,7 +6,7 @@ import streamlit as st
 from rephrase import Rephrase
 from rag_pipeline import RAG, TextProcessor
 from audio_tts import TextToSpeech  # Importing the TextToSpeech class
-
+import time
 import sys
 from io import StringIO
 
@@ -19,11 +19,60 @@ tts = TextToSpeech()
 #Initialize TextProcessor class
 textprocessor=TextProcessor(chunk_size=1000, chunk_overlap=20)
 
+# # Function to convert bot answer to speech and stream it
+# def play_bot_audio(answer):
+#     audio_file = "response.wav"
+#     tts.text_to_speech(text=answer, file_path=audio_file)  # Generate audio from text
+#     st.audio(audio_file) 
+
+
 # Function to convert bot answer to speech and stream it
 def play_bot_audio(answer):
-    audio_file = "response.wav"
-    tts.text_to_speech(answer, file_path=audio_file)  # Generate audio from text
-    st.audio(audio_file) 
+    # Define the max length of each chunk (250 characters)
+    max_chunk_length = 200
+    
+    # Split the answer into chunks without breaking words
+    chunks = []
+    while len(answer) > max_chunk_length:
+        # Find the last space within the 250-character limit
+        split_point = answer.rfind(' ', 0, max_chunk_length)
+        if split_point == -1:  # If no space is found (edge case)
+            split_point = max_chunk_length  # Force break at the max length
+        chunks.append(answer[:split_point])  # Append the chunk
+        answer = answer[split_point:].lstrip()  # Remove the chunk from the original answer
+
+    # Append the remaining part of the answer (less than 250 characters)
+    if answer:
+        chunks.append(answer)
+    print("chunks size:-",len(chunks))
+    # # Play each chunk sequentially
+    # for chunk in chunks:
+    #     audio_file = "response.wav"
+    #     tts.text_to_speech(text=chunk, file_path=audio_file)  # Generate audio from text for the chunk
+    #     st.audio(audio_file)  # Play the audio
+    #     time.sleep(1)  # Small delay between chunks to ensure smooth transition
+     # Generate and save audio for each chunk
+    for i, chunk in enumerate(chunks):
+        audio_file = f"response_{i}.wav"
+        tts.text_to_speech(text=chunk, file_path=audio_file)  # Generate audio from text for the chunk
+        audio_files.append(audio_file)  # Add the file to the list
+
+    # Combine all audio chunks into one
+    combined_audio = AudioSegment.empty()  # Start with an empty audio segment
+    for audio_file in audio_files:
+        audio_segment = AudioSegment.from_wav(audio_file)  # Load each audio file
+        combined_audio += audio_segment  # Append to the combined audio
+
+    # Export the combined audio to a single file
+    combined_audio_file = "combined_response.wav"
+    combined_audio.export(combined_audio_file, format="wav")
+
+    # Play the combined audio file
+    st.audio(combined_audio_file)
+
+    # Clean up the individual chunk audio files (optional)
+    for audio_file in audio_files:
+        os.remove(audio_file)
 
 
 os.environ['PINECONE_API_KEY'] = 'pcsk_4hp8P_FGu8ZMCRX7gEjF1AH7ZTF3fv6V4uFyrTpNHkCidkvCofdF6LjR4QLwSZCpqSTGC'
