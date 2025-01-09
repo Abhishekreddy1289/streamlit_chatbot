@@ -49,7 +49,7 @@ spacy[ja]>=3,<3.8
 
 # Optional dependencies (based on your needs)
 # Notebooks
-bokeh==1.4.0
+bokeh>=2.4.0
 pandas>=1.4,<2.0
 umap-learn>=0.5.1
 
