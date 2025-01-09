@@ -5,13 +5,18 @@ from io import BytesIO
 import streamlit as st
 from rephrase import Rephrase
 from rag_pipeline import RAG, TextProcessor
+from audio_tts import TextToSpeech  # Importing the TextToSpeech class
+
+tts = TextToSpeech() 
 #Initialize TextProcessor class
 textprocessor=TextProcessor(chunk_size=1000, chunk_overlap=20)
 
-# Set an environment variable
-# os.environ['PINECONE_API_KEY'] = '193bfd5b-1a4a-4c8b-bc06-7ec7c4cfc66a'
+# Function to convert bot answer to speech and stream it
+def play_bot_audio(answer):
+    audio_file = "response.wav"
+    tts.text_to_speech(answer, file_path=audio_file)  # Generate audio from text
+    st.audio(audio_file) 
 
-# PINECONE_API_KEY="193bfd5b-1a4a-4c8b-bc06-7ec7c4cfc66a"
 
 os.environ['PINECONE_API_KEY'] = 'pcsk_4hp8P_FGu8ZMCRX7gEjF1AH7ZTF3fv6V4uFyrTpNHkCidkvCofdF6LjR4QLwSZCpqSTGC'
 PINECONE_API_KEY="pcsk_4hp8P_FGu8ZMCRX7gEjF1AH7ZTF3fv6V4uFyrTpNHkCidkvCofdF6LjR4QLwSZCpqSTGC"
@@ -227,6 +232,7 @@ def cache_answer(answer):
             time.sleep(0.02)
     st.write_stream(stream_answer)
     st.session_state.messages.append({"role": "Bot", "content": answer})
+    play_bot_audio(answer)
 
 
 def process_input(prompt, rephrase_prompt):
@@ -253,6 +259,7 @@ def process_input(prompt, rephrase_prompt):
             final_answer=rag_obj.answer
             st.session_state.messages.append({"role": "Bot", "content": final_answer})
             rag_obj.answer=''
+            play_bot_audio(final_answer)
         else:
             st.error("Please enter your API Key and other details at the top.")
     except Exception as e:
