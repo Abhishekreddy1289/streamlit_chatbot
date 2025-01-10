@@ -10,6 +10,7 @@ import time
 import sys
 from io import StringIO
 from pydub import AudioSegment
+from tts_preprocess_text import TextCleaner
 
 # Simulate the user entering "y"
 sys.stdin = StringIO('y\n')
@@ -17,6 +18,7 @@ sys.stdin = StringIO('y\n')
 os.environ['COQUI_LICENSE_ACCEPTED'] = 'y'
 
 tts = TextToSpeech() 
+preprocess_tts=TextCleaner()
 #Initialize TextProcessor class
 textprocessor=TextProcessor(chunk_size=1000, chunk_overlap=20)
 
@@ -27,7 +29,36 @@ textprocessor=TextProcessor(chunk_size=1000, chunk_overlap=20)
 #     st.audio(audio_file) 
 
 
-# Function to convert bot answer to speech and stream it
+#Function to convert bot answer to speech and stream it
+def play_bot_audio(answer):
+    # answer=preprocess_tts.clean(answer)
+    # Define the max length of each chunk (250 characters)
+    max_chunk_length = 200
+    
+    # Split the answer into chunks without breaking words
+    chunks = []
+    while len(answer) > max_chunk_length:
+        # Find the last space within the 250-character limit
+        split_point = answer.rfind(' ', 0, max_chunk_length)
+        if split_point == -1:  # If no space is found (edge case)
+            split_point = max_chunk_length  # Force break at the max length
+        chunks.append(answer[:split_point])  # Append the chunk
+        answer = answer[split_point:].lstrip()  # Remove the chunk from the original answer
+    
+    # Append the remaining part of the answer (less than 250 characters)
+    if answer:
+        chunks.append(answer)
+    print("chunks size:-",len(chunks))
+    # Play each chunk sequentially
+    for chunk in chunks:
+        audio_file = "response.wav"
+        tts.text_to_speech(text=chunk, file_path=audio_file)  # Generate audio from text for the chunk
+        st.audio(audio_file)  # Play the audio
+        time.sleep(1)  # Small delay between chunks to ensure smooth transition
+    
+
+
+# # Function to convert bot answer to speech and stream it
 # def play_bot_audio(answer):
 #     # Define the max length of each chunk (250 characters)
 #     max_chunk_length = 200
@@ -35,79 +66,51 @@ textprocessor=TextProcessor(chunk_size=1000, chunk_overlap=20)
 #     # Split the answer into chunks without breaking words
 #     chunks = []
 #     while len(answer) > max_chunk_length:
-#         # Find the last space within the 250-character limit
 #         split_point = answer.rfind(' ', 0, max_chunk_length)
-#         if split_point == -1:  # If no space is found (edge case)
-#             split_point = max_chunk_length  # Force break at the max length
-#         chunks.append(answer[:split_point])  # Append the chunk
-#         answer = answer[split_point:].lstrip()  # Remove the chunk from the original answer
-
-#     # Append the remaining part of the answer (less than 250 characters)
-    # if answer:
-    #     chunks.append(answer)
-    # print("chunks size:-",len(chunks))
-    # # Play each chunk sequentially
-    # for chunk in chunks:
-    #     audio_file = "response.wav"
-    #     tts.text_to_speech(text=chunk, file_path=audio_file)  # Generate audio from text for the chunk
-    #     st.audio(audio_file)  # Play the audio
-    #     time.sleep(1)  # Small delay between chunks to ensure smooth transition
-     # Generate and save audio for each chunk
-
-
-# Function to convert bot answer to speech and stream it
-def play_bot_audio(answer):
-    # Define the max length of each chunk (250 characters)
-    max_chunk_length = 200
+#         if split_point == -1:
+#             split_point = max_chunk_length
+#         chunks.append(answer[:split_point])
+#         answer = answer[split_point:].lstrip()
     
-    # Split the answer into chunks without breaking words
-    chunks = []
-    while len(answer) > max_chunk_length:
-        split_point = answer.rfind(' ', 0, max_chunk_length)
-        if split_point == -1:
-            split_point = max_chunk_length
-        chunks.append(answer[:split_point])
-        answer = answer[split_point:].lstrip()
-    
-    if answer:
-        chunks.append(answer)  # Append the remaining part if any
+#     if answer:
+#         chunks.append(answer)  # Append the remaining part if any
 
-    # List to hold the audio files for each chunk
-    audio_files = []
+#     # List to hold the audio files for each chunk
+#     audio_files = []
 
-    # Generate and save audio for each chunk
-    for i, chunk in enumerate(chunks):
-        audio_file = f"response_{i}.wav"
+#     # Generate and save audio for each chunk
+#     for i, chunk in enumerate(chunks):
+#         audio_file = f"response_{i}.wav"
         
-        # Generate the audio file from text
-        tts.text_to_speech(text=chunk, file_path=audio_file)
+#         # Generate the audio file from text
+#         tts.text_to_speech(text=chunk, file_path=audio_file)
         
-        # Check if the audio file is created successfully
-        if os.path.exists(audio_file):
-            print(f"Audio file created: {audio_file}")
-            audio_files.append(audio_file)  # Add the file to the list
-        else:
-            print(f"Error: Audio file not created for chunk {i}")
+#         # Check if the audio file is created successfully
+#         if os.path.exists(audio_file):
+#             print(f"Audio file created: {audio_file}")
+#             audio_files.append(audio_file)  # Add the file to the list
+#         else:
+#             print(f"Error: Audio file not created for chunk {i}")
 
-    # Combine all audio chunks into one
-    if audio_files:
-        combined_audio = AudioSegment.empty()
-        for audio_file in audio_files:
-            audio_segment = AudioSegment.from_wav(audio_file)
-            combined_audio += audio_segment
+#     # Combine all audio chunks into one
+#     if audio_files:
+#         combined_audio = AudioSegment.empty()
+#         for audio_file in audio_files:
+#             audio_segment = AudioSegment.from_wav(audio_file)
+#             combined_audio += audio_segment
 
-        # Export the combined audio to a single file
-        combined_audio_file = "combined_response.wav"
-        combined_audio.export(combined_audio_file, format="wav")
+#         # Export the combined audio to a single file
+#         combined_audio_file = "combined_response.wav"
+#         combined_audio.export(combined_audio_file, format="wav")
 
-        # Play the combined audio file
-        st.audio(combined_audio_file)
+#         # Play the combined audio file
+#         st.audio(combined_audio_file)
 
-        # Clean up the individual chunk audio files (optional)
-        for audio_file in audio_files:
-            os.remove(audio_file)
-    else:
-        print("No audio files were generated!")
+#         # Clean up the individual chunk audio files (optional)
+#         for audio_file in audio_files:
+#             os.remove(audio_file)
+#     else:
+#         print("No audio files were generated!")
 
 
 
@@ -325,6 +328,7 @@ def cache_answer(answer):
             time.sleep(0.02)
     st.write_stream(stream_answer)
     st.session_state.messages.append({"role": "Bot", "content": answer})
+    
     play_bot_audio(answer)
 
 
